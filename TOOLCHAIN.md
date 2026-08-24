@@ -11,4 +11,6 @@ Required local tools:
 
 The project uses the Android package identifier `com.codeywinslow.cletris`. Debug exports use the local Android debug keystore supplied by the Android toolchain; no keystore is stored in this repository.
 
-Set `ANDROID_HOME` to the Android SDK directory. The scripts derive `ANDROID_SDK_ROOT` from it when needed. Set `CLETRIS_PHONE_BUILDS_DIR` to a Drive-synced destination only when publishing a debug build to a phone.
+In Godot Editor Settings, configure both the Java SDK path and Android SDK path. These settings are what Godot uses to validate and export Android builds; do not assume a `PATH` entry or `ANDROID_HOME` selects the desired Build-Tools version. On this PC, the working SDK root is `C:\Android\Sdk` (Build-Tools 35.0.1).
+
+Set `CLETRIS_PHONE_BUILDS_DIR` to a Drive-synced destination only when publishing a debug build to a phone. Start a new PowerShell or Codex session after changing it so the publishing process inherits the value.
