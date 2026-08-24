@@ -7,6 +7,7 @@ var failures := 0
 
 func _init() -> void:
 	test_seeded_sequences()
+	test_next_piece_queue()
 	test_collision_and_rotation()
 	test_locking_clearing_and_scoring()
 	test_game_over()
@@ -39,6 +40,19 @@ func test_seeded_sequences() -> void:
 	for piece in sequence_a.slice(0, 7):
 		seen[piece] = true
 	expect(seen.size() == 7, "a bag must include all seven pieces")
+
+func test_next_piece_queue() -> void:
+	var expected_source = PieceSource.new(12345)
+	var expected_active := expected_source.next_piece()
+	var expected_next := expected_source.next_piece()
+	var expected_after_next := expected_source.next_piece()
+	var rules = Rules.new()
+	rules.new_game(12345)
+	expect(rules.active.id == expected_active, "new game must spawn the first seeded piece")
+	expect(rules.next_piece_id == expected_next, "new game must queue the next seeded piece")
+	rules.spawn_next()
+	expect(rules.active.id == expected_next, "spawn must promote the queued piece")
+	expect(rules.next_piece_id == expected_after_next, "spawn must refill the queued piece")
 
 func test_collision_and_rotation() -> void:
 	var rules = Rules.new()

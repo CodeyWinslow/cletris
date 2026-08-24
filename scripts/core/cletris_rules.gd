@@ -23,6 +23,7 @@ var score := 0
 var lines := 0
 var game_over := false
 var active := {}
+var next_piece_id := ""
 var seed := 1
 var source
 
@@ -37,11 +38,16 @@ func new_game(new_seed: int = 1) -> void:
 	score = 0
 	lines = 0
 	game_over = false
+	active = {}
+	next_piece_id = ""
 	source = PieceSource.new(seed)
 	spawn_next()
 
 func spawn_next() -> void:
-	spawn_piece(source.next_piece())
+	if next_piece_id.is_empty():
+		next_piece_id = source.next_piece()
+	spawn_piece(next_piece_id)
+	next_piece_id = source.next_piece()
 
 func spawn_piece(piece_id: String) -> void:
 	active = {"id": piece_id, "position": SPAWN_POSITION, "rotation": 0}
