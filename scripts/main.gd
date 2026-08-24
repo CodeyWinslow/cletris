@@ -104,7 +104,7 @@ func _draw() -> void:
 	draw_string(ThemeDB.fallback_font, Vector2(252, 57), "LINES %03d" % rules.lines, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color("94a3b8"))
 	draw_string(ThemeDB.fallback_font, Vector2(358, 23), "NEXT", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color("94a3b8"))
 	_draw_next_preview()
-	draw_string(ThemeDB.fallback_font, Vector2(24, 73), "TAP ROTATES  |  HOLD FALLS  |  DRAG MOVES  |  SWIPE DOWN SLAMS", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color("64748b"))
+	draw_string(ThemeDB.fallback_font, Vector2(24, 73), "TAP ROTATES · HOLD FALLS · DRAG MOVES · SWIPE SLAMS", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color("64748b"))
 	draw_rect(Rect2(BOARD_ORIGIN - Vector2(4, 4), Vector2(CletrisRules.BOARD_WIDTH * CELL + 8, CletrisRules.BOARD_HEIGHT * CELL + 8)), Color("10233a"), true)
 	for y in range(CletrisRules.BOARD_HEIGHT):
 		for x in range(CletrisRules.BOARD_WIDTH):
@@ -126,14 +126,16 @@ func _draw_next_preview() -> void:
 	var minimum := Vector2i(4, 4)
 	var maximum := Vector2i.ZERO
 	for offset in offsets:
-		minimum = minimum.min(offset)
-		maximum = maximum.max(offset)
+		var cell: Vector2i = offset
+		minimum = Vector2i(min(minimum.x, cell.x), min(minimum.y, cell.y))
+		maximum = Vector2i(max(maximum.x, cell.x), max(maximum.y, cell.y))
 	var shape_size := maximum - minimum + Vector2i.ONE
 	var shape_pixel_size := Vector2(shape_size) * PREVIEW_CELL
 	var shape_origin := PREVIEW_BOX.position + (PREVIEW_BOX.size - shape_pixel_size) * 0.5
 	var value := rules.piece_value(rules.next_piece_id)
 	for offset in offsets:
-		var rect := Rect2(shape_origin + Vector2(offset - minimum) * PREVIEW_CELL, Vector2.ONE * (PREVIEW_CELL - 2.0))
+		var cell: Vector2i = offset
+		var rect := Rect2(shape_origin + Vector2(cell - minimum) * PREVIEW_CELL, Vector2.ONE * (PREVIEW_CELL - 2.0))
 		_draw_preview_cell(rect, value)
 
 func _draw_cell(cell: Vector2i, value: int) -> void:
