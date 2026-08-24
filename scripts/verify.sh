@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-"$root/scripts/test.sh"
+bash "$root/scripts/test.sh"
 
 limit=1048576
 budget=26214400
