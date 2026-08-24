@@ -1,0 +1,26 @@
+# Godot editor/import state
+.godot/
+.import/
+
+# Local Android output and phone delivery directory
+build/
+drive-builds/
+*.apk
+*.aab
+
+# Android/Java signing and SDK material
+*.keystore
+*.jks
+local.properties
+android/keystore/
+
+# Tooling output and local caches
+.cache/
+logs/
+*.log
+.DS_Store
+Thumbs.db
+
+# IDE settings
+.idea/
+.vscode/
