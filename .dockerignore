@@ -1,0 +1,13 @@
+.git/
+.godot/
+.import/
+build/
+drive-builds/
+.cache/
+.cletris/
+logs/
+*.apk
+*.aab
+*.keystore
+*.jks
+environment/local.env

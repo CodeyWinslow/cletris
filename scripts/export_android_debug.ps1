@@ -2,14 +2,14 @@
 param()
 
 $ErrorActionPreference = 'Stop'
-$root = Split-Path -Parent $PSScriptRoot
+. "$PSScriptRoot\lib\toolchain.ps1"
+$toolchain = Assert-CletrisToolchain -RequireAndroid
+$root = $toolchain['Root']
 $output = Join-Path $root 'build\android\Cletris-debug.apk'
-$godot = (Get-Command godot -ErrorAction Stop).Source
+$godot = $toolchain['Godot']
 
-if (-not $env:ANDROID_SDK_ROOT -and $env:ANDROID_HOME) {
-    $env:ANDROID_SDK_ROOT = $env:ANDROID_HOME
-}
-if (-not $env:ANDROID_SDK_ROOT) { throw 'ANDROID_HOME or ANDROID_SDK_ROOT is required for Android export.' }
+Initialize-CletrisExportTemplates $toolchain | Out-Null
+Enable-CletrisGodotIsolation $toolchain | Out-Null
 
 & "$PSScriptRoot\verify.ps1"
 if ($LASTEXITCODE -ne 0) { throw 'Verification failed; Android export was not attempted.' }

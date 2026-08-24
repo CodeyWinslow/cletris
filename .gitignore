@@ -16,6 +16,9 @@ android/keystore/
 
 # Tooling output and local caches
 .cache/
+.cletris/
+godot-local/
+environment/local.env
 logs/
 *.log
 .DS_Store

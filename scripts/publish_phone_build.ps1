@@ -2,7 +2,8 @@
 param()
 
 $ErrorActionPreference = 'Stop'
-$root = Split-Path -Parent $PSScriptRoot
+. "$PSScriptRoot\lib\toolchain.ps1"
+$root = Get-CletrisRepositoryRoot
 $apk = Join-Path $root 'build\android\Cletris-debug.apk'
 $destinationDirectory = [Environment]::GetEnvironmentVariable('CLETRIS_PHONE_BUILDS_DIR', 'Process')
 
@@ -19,9 +20,8 @@ if (-not (Test-Path -LiteralPath $apk -PathType Leaf)) {
 $targetApk = Join-Path $destinationDirectory 'Cletris-debug.apk'
 $targetInfo = Join-Path $destinationDirectory 'Cletris-build-info.txt'
 $commit = (git -C $root rev-parse HEAD).Trim()
-$godotExecutable = (Get-Command godot -ErrorAction Stop).Source
-$godotVersion = (Get-Item -LiteralPath $godotExecutable).VersionInfo.ProductVersion
-if ([string]::IsNullOrWhiteSpace($godotVersion)) { $godotVersion = 'unknown' }
+$toolchain = Assert-CletrisToolchain
+$godotVersion = ((& $toolchain['Godot'] --version 2>&1 | Select-Object -First 1).ToString()).Trim()
 $utc = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
 
 Copy-Item -LiteralPath $apk -Destination $targetApk -Force

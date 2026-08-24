@@ -1,29 +1,26 @@
 [CmdletBinding()]
-param()
+param(
+    [switch]$Configure
+)
 
 $ErrorActionPreference = 'Stop'
-$root = Split-Path -Parent $PSScriptRoot
+. "$PSScriptRoot\lib\toolchain.ps1"
 
-function Require-Command([string]$name) {
-    $command = Get-Command $name -ErrorAction SilentlyContinue
-    if (-not $command) { throw "Required command '$name' was not found on PATH." }
-    return $command.Source
+$toolchain = Assert-CletrisToolchain -RequireAndroid
+$git = Get-Command git -ErrorAction Stop
+Write-Output "Repository: $($toolchain['Root'])"
+& $git.Source --version
+Write-Output $toolchain['JavaVersion']
+Write-Output "Godot: $(& $toolchain['Godot'] --version 2>&1 | Select-Object -First 1)"
+Write-Output "Android SDK: $($toolchain['AndroidSdk'])"
+Write-Output "Godot isolation cache: $(Get-CletrisCacheRoot)"
+
+if ($Configure) {
+    $templates = Initialize-CletrisExportTemplates $toolchain
+    $isolation = Enable-CletrisGodotIsolation $toolchain
+    Write-Output "Configured isolated Godot settings: $($isolation['Config'])"
+    Write-Output "Copied matching export templates: $templates"
+} else {
+    Write-Output 'Doctor completed. No software, user environment variable, or shared Godot setting was modified.'
+    Write-Output 'Run scripts/bootstrap.ps1 -Configure once to create isolated Godot settings and copy already-installed matching templates.'
 }
-
-$git = Require-Command 'git'
-$java = Require-Command 'java'
-$godot = Require-Command 'godot'
-
-if (-not $env:ANDROID_HOME -and -not $env:ANDROID_SDK_ROOT) {
-    throw 'ANDROID_HOME or ANDROID_SDK_ROOT must point to an installed Android SDK.'
-}
-if (-not $env:ANDROID_SDK_ROOT -and $env:ANDROID_HOME) {
-    $env:ANDROID_SDK_ROOT = $env:ANDROID_HOME
-}
-
-Write-Output "Repository: $root"
-& $git --version
-& $java -version
-& $godot --version
-Write-Output "Android SDK: $env:ANDROID_SDK_ROOT"
-Write-Output 'Bootstrap validation complete. No software was installed or modified.'
