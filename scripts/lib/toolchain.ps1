@@ -95,6 +95,9 @@ function Assert-CletrisToolchain([switch]$RequireAndroid) {
 
 function Enable-CletrisGodotIsolation([hashtable]$Toolchain) {
     $cache = Get-CletrisCacheRoot
+    # Nested project scripts inherit the redirected APPDATA value. Persist the
+    # resolved cache in this process so they do not derive a nested cache path.
+    if (-not $env:CLETRIS_TOOLCHAIN_CACHE) { $env:CLETRIS_TOOLCHAIN_CACHE = $cache }
     $configRoot = Join-Path $cache 'godot-config'
     $dataRoot = Join-Path $cache 'godot-data'
     New-Item -ItemType Directory -Force -Path $configRoot, $dataRoot | Out-Null
