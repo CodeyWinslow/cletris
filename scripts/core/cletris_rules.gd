@@ -88,6 +88,16 @@ func try_rotate_clockwise() -> bool:
 		return true
 	return false
 
+func try_rotate_counterclockwise() -> bool:
+	if game_over or active.is_empty():
+		return false
+	var rotations: Array = SHAPES[active.id]
+	var target_rotation: int = (active.rotation - 1 + rotations.size()) % rotations.size()
+	if can_place(active.id, active.position, target_rotation):
+		active.rotation = target_rotation
+		return true
+	return false
+
 func step_down() -> bool:
 	if try_move(Vector2i.DOWN):
 		return true

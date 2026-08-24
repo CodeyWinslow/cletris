@@ -53,6 +53,8 @@ func test_collision_and_rotation() -> void:
 	expect(not rules.try_rotate_clockwise(), "invalid wall rotation must be rejected")
 	rules.active.position = Vector2i(3, 0)
 	expect(rules.try_rotate_clockwise(), "valid rotation must succeed")
+	expect(rules.try_rotate_counterclockwise(), "valid counterclockwise rotation must succeed")
+	expect(rules.active.rotation == 0, "opposite rotations must restore the original orientation")
 
 func test_locking_clearing_and_scoring() -> void:
 	var rules = Rules.new()
