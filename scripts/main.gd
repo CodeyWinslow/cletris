@@ -134,8 +134,8 @@ func _draw_next_preview() -> void:
 	var shape_origin := PREVIEW_BOX.position + (PREVIEW_BOX.size - shape_pixel_size) * 0.5
 	var value := rules.piece_value(rules.next_piece_id)
 	for offset in offsets:
-		var cell: Vector2i = offset
-		var rect := Rect2(shape_origin + Vector2(cell - minimum) * PREVIEW_CELL, Vector2.ONE * (PREVIEW_CELL - 2.0))
+		var preview_cell: Vector2i = offset
+		var rect := Rect2(shape_origin + Vector2(preview_cell - minimum) * PREVIEW_CELL, Vector2.ONE * (PREVIEW_CELL - 2.0))
 		_draw_preview_cell(rect, value)
 
 func _draw_cell(cell: Vector2i, value: int) -> void:
