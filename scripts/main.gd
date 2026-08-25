@@ -138,6 +138,7 @@ func _draw() -> void:
 		for x in range(Rules.BOARD_WIDTH):
 			_draw_cell(Vector2i(x, y), rules.board[y][x])
 	if not rules.game_over:
+		_draw_ghost_piece()
 		for cell in rules.active_cells():
 			_draw_cell(cell, rules.piece_value(rules.active.id))
 	if rules.game_over:
@@ -160,6 +161,24 @@ func _draw_pause_overlay() -> void:
 	draw_rect(PAUSE_OVERLAY, Color(0.01, 0.03, 0.08, 0.82), true)
 	draw_string(ThemeDB.fallback_font, Vector2(0, 348), "PAUSED", HORIZONTAL_ALIGNMENT_CENTER, 432, 32, Color("f8fafc"))
 	draw_string(ThemeDB.fallback_font, Vector2(0, 378), "Tap RESUME to continue", HORIZONTAL_ALIGNMENT_CENTER, 432, 16, Color("c4b5fd"))
+
+func _draw_ghost_piece() -> void:
+	if rules.active.is_empty():
+		return
+	var landing_position: Vector2i = rules.active.position
+	while rules.can_place(rules.active.id, landing_position + Vector2i.DOWN, rules.active.rotation):
+		landing_position += Vector2i.DOWN
+	var value := rules.piece_value(rules.active.id)
+	for offset in rules.cells_for(rules.active.id, rules.active.rotation):
+		_draw_ghost_cell(landing_position + offset, value)
+
+func _draw_ghost_cell(cell: Vector2i, value: int) -> void:
+	var rect := Rect2(BOARD_ORIGIN + Vector2(cell) * CELL, Vector2.ONE * (CELL - 2.0))
+	var color: Color = COLORS[value]
+	color.a = 0.2
+	draw_rect(rect, color, true)
+	color.a = 0.8
+	draw_rect(rect, color, false, 2.0)
 
 func _draw_next_preview() -> void:
 	draw_rect(PREVIEW_BOX, Color("0b1b2e"), true)
