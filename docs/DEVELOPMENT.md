@@ -18,6 +18,10 @@ The doctor only inspects software. `-Configure` creates an external cache and co
 
 `scripts/export_android_debug.ps1` writes only `build/android/Cletris-debug.apk`. If a local phone test is wanted, run `scripts/publish_phone_build.ps1` afterward. It requires an accessible `CLETRIS_PHONE_BUILDS_DIR`, replaces only `Cletris-debug.apk` there, and writes build metadata beside it. It never configures Google Drive. Manual phone testing remains manual.
 
+## Feature workflow
+
+Implement each feature request on a dedicated feature branch, not `main`. Run the required tests and verification on that branch, push it, and open a pull request for review. Merge only after the pull request is accepted; then update local `main` before building or publishing a phone APK.
+
 ## Linux and cloud workflow
 
 The recommended cloud environment is the pinned repository [`Dockerfile`](../Dockerfile). Build and run it using [docker/README.md](../docker/README.md). The container sets project-scoped paths, has no credentials, and has no phone publishing route.
