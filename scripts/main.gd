@@ -6,6 +6,8 @@ const BOARD_ORIGIN := Vector2(24, 84)
 const CELL := 32.0
 const PREVIEW_BOX := Rect2(352, 32, 72, 64)
 const PREVIEW_CELL := 14.0
+const PAUSE_BUTTON := Rect2(352, 104, 72, 36)
+const PAUSE_OVERLAY := Rect2(Vector2.ZERO, Vector2(432, 768))
 const TAP_MAX_TRAVEL := 20.0
 const HORIZONTAL_DRAG_STEP := 24.0
 const SLAM_SWIPE_DISTANCE := 72.0
@@ -21,24 +23,31 @@ var touch_start := Vector2.ZERO
 var touch_elapsed := 0.0
 var horizontal_drag_remainder := 0.0
 var touch_is_dragging := false
+var paused := false
 
 func _ready() -> void:
 	rules.new_game(20260824)
 	queue_redraw()
 
 func _process(delta: float) -> void:
-	if not rules.game_over:
-		if touch_active:
-			touch_elapsed += delta
-		gravity_elapsed += delta
-		var fall_interval := HOLD_GRAVITY_SECONDS if touch_active and not touch_is_dragging and touch_elapsed >= HOLD_DELAY else gravity_seconds
-		if gravity_elapsed >= fall_interval:
-			gravity_elapsed = 0.0
-			rules.step_down()
-			queue_redraw()
+	if paused or rules.game_over:
+		return
+	if touch_active:
+		touch_elapsed += delta
+	gravity_elapsed += delta
+	var fall_interval := HOLD_GRAVITY_SECONDS if touch_active and not touch_is_dragging and touch_elapsed >= HOLD_DELAY else gravity_seconds
+	if gravity_elapsed >= fall_interval:
+		gravity_elapsed = 0.0
+		rules.step_down()
+		queue_redraw()
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_P or event.keycode == KEY_ESCAPE:
+			_toggle_pause()
+			return
+		if paused:
+			return
 		if event.keycode == KEY_LEFT:
 			rules.try_move(Vector2i.LEFT)
 		elif event.keycode == KEY_RIGHT:
@@ -59,8 +68,14 @@ func _input(event: InputEvent) -> void:
 
 func _handle_screen_touch(event: InputEventScreenTouch) -> void:
 	if event.pressed:
+		if not rules.game_over and PAUSE_BUTTON.has_point(event.position):
+			_toggle_pause()
+			return
+		if paused:
+			return
 		if rules.game_over:
 			rules.new_game(rules.seed)
+			paused = false
 			queue_redraw()
 			return
 		touch_active = true
@@ -69,7 +84,7 @@ func _handle_screen_touch(event: InputEventScreenTouch) -> void:
 		horizontal_drag_remainder = 0.0
 		touch_is_dragging = false
 		return
-	if not touch_active:
+	if paused or not touch_active:
 		return
 	touch_active = false
 	if not touch_is_dragging and touch_elapsed < HOLD_DELAY:
@@ -80,7 +95,7 @@ func _handle_screen_touch(event: InputEventScreenTouch) -> void:
 	queue_redraw()
 
 func _handle_screen_drag(event: InputEventScreenDrag) -> void:
-	if not touch_active or rules.game_over:
+	if paused or not touch_active or rules.game_over:
 		return
 	var displacement := event.position - touch_start
 	if displacement.y >= SLAM_SWIPE_DISTANCE and abs(displacement.y) > abs(displacement.x):
@@ -96,6 +111,19 @@ func _handle_screen_drag(event: InputEventScreenDrag) -> void:
 			rules.try_move(Vector2i(direction, 0))
 			horizontal_drag_remainder -= direction * HORIZONTAL_DRAG_STEP
 		queue_redraw()
+
+func _toggle_pause() -> void:
+	if rules.game_over:
+		return
+	paused = not paused
+	_cancel_touch_gesture()
+	queue_redraw()
+
+func _cancel_touch_gesture() -> void:
+	touch_active = false
+	touch_elapsed = 0.0
+	horizontal_drag_remainder = 0.0
+	touch_is_dragging = false
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, Vector2(432, 768)), Color("07111f"))
@@ -116,6 +144,22 @@ func _draw() -> void:
 		draw_rect(Rect2(35, 330, 362, 94), Color(0.02, 0.06, 0.12, 0.94), true)
 		draw_string(ThemeDB.fallback_font, Vector2(96, 370), "STACK LOCKED", HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color("f8fafc"))
 		draw_string(ThemeDB.fallback_font, Vector2(72, 400), "Tap anywhere to restart", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("7dd3fc"))
+	elif paused:
+		_draw_pause_overlay()
+	if not rules.game_over:
+		_draw_pause_button()
+
+func _draw_pause_button() -> void:
+	var fill := Color("7c3aed") if paused else Color("172554")
+	var label := "RESUME" if paused else "PAUSE"
+	draw_rect(PAUSE_BUTTON, fill, true)
+	draw_rect(PAUSE_BUTTON, Color("a5b4fc"), false, 1.0)
+	draw_string(ThemeDB.fallback_font, PAUSE_BUTTON.position + Vector2(0, 23), label, HORIZONTAL_ALIGNMENT_CENTER, PAUSE_BUTTON.size.x, 11, Color("f8fafc"))
+
+func _draw_pause_overlay() -> void:
+	draw_rect(PAUSE_OVERLAY, Color(0.01, 0.03, 0.08, 0.82), true)
+	draw_string(ThemeDB.fallback_font, Vector2(0, 348), "PAUSED", HORIZONTAL_ALIGNMENT_CENTER, 432, 32, Color("f8fafc"))
+	draw_string(ThemeDB.fallback_font, Vector2(0, 378), "Tap RESUME to continue", HORIZONTAL_ALIGNMENT_CENTER, 432, 16, Color("c4b5fd"))
 
 func _draw_next_preview() -> void:
 	draw_rect(PREVIEW_BOX, Color("0b1b2e"), true)
