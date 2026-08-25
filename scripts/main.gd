@@ -8,6 +8,11 @@ const PREVIEW_BOX := Rect2(352, 32, 72, 64)
 const PREVIEW_CELL := 14.0
 const PAUSE_BUTTON := Rect2(352, 104, 72, 36)
 const PAUSE_OVERLAY := Rect2(Vector2.ZERO, Vector2(432, 768))
+const PAUSE_RESUME_BUTTON := Rect2(80, 420, 272, 52)
+const PAUSE_MENU_BUTTON := Rect2(80, 488, 272, 52)
+const MENU_PLAY_BUTTON := Rect2(96, 304, 240, 60)
+const MENU_CREDITS_BUTTON := Rect2(96, 388, 240, 52)
+const CREDITS_BACK_BUTTON := Rect2(96, 620, 240, 52)
 const TAP_MAX_TRAVEL := 20.0
 const HORIZONTAL_DRAG_STEP := 24.0
 const SLAM_SWIPE_DISTANCE := 72.0
@@ -15,7 +20,10 @@ const HOLD_DELAY := 0.2
 const HOLD_GRAVITY_SECONDS := 0.06
 const COLORS := [Color("000000"), Color("38bdf8"), Color("818cf8"), Color("fb923c"), Color("facc15"), Color("4ade80"), Color("e879f9"), Color("fb7185")]
 
+enum AppScreen { MAIN_MENU, GAME, CREDITS }
+
 var rules = Rules.new()
+var screen := AppScreen.MAIN_MENU
 var gravity_elapsed := 0.0
 var gravity_seconds := 0.65
 var touch_active := false
@@ -26,11 +34,10 @@ var touch_is_dragging := false
 var paused := false
 
 func _ready() -> void:
-	rules.new_game(20260824)
 	queue_redraw()
 
 func _process(delta: float) -> void:
-	if paused or rules.game_over:
+	if screen != AppScreen.GAME or paused or rules.game_over:
 		return
 	if touch_active:
 		touch_elapsed += delta
@@ -43,40 +50,71 @@ func _process(delta: float) -> void:
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_P or event.keycode == KEY_ESCAPE:
-			_toggle_pause()
-			return
-		if paused:
-			return
-		if event.keycode == KEY_LEFT:
-			rules.try_move(Vector2i.LEFT)
-		elif event.keycode == KEY_RIGHT:
-			rules.try_move(Vector2i.RIGHT)
-		elif event.keycode == KEY_UP:
-			rules.try_rotate_clockwise()
-		elif event.keycode == KEY_DOWN:
-			rules.step_down()
-		elif event.keycode == KEY_SPACE:
-			rules.hard_drop()
-		elif event.keycode == KEY_R:
-			rules.new_game(rules.seed)
-		queue_redraw()
+		_handle_key(event.keycode)
+		return
 	if event is InputEventScreenTouch:
 		_handle_screen_touch(event)
 	elif event is InputEventScreenDrag:
 		_handle_screen_drag(event)
 
+func _handle_key(keycode: int) -> void:
+	if screen == AppScreen.MAIN_MENU:
+		if keycode == KEY_ENTER or keycode == KEY_KP_ENTER or keycode == KEY_SPACE:
+			_start_game()
+		elif keycode == KEY_C:
+			_show_credits()
+		return
+	if screen == AppScreen.CREDITS:
+		if keycode == KEY_ESCAPE or keycode == KEY_ENTER or keycode == KEY_KP_ENTER:
+			_show_main_menu()
+		return
+	if keycode == KEY_P or keycode == KEY_ESCAPE:
+		_toggle_pause()
+		return
+	if paused:
+		if keycode == KEY_M:
+			_show_main_menu()
+		return
+	if keycode == KEY_LEFT:
+		rules.try_move(Vector2i.LEFT)
+	elif keycode == KEY_RIGHT:
+		rules.try_move(Vector2i.RIGHT)
+	elif keycode == KEY_UP:
+		rules.try_rotate_clockwise()
+	elif keycode == KEY_DOWN:
+		rules.step_down()
+	elif keycode == KEY_SPACE:
+		rules.hard_drop()
+	elif keycode == KEY_R:
+		rules.new_game(rules.seed)
+	gravity_elapsed = 0.0
+	queue_redraw()
+
 func _handle_screen_touch(event: InputEventScreenTouch) -> void:
+	if screen == AppScreen.MAIN_MENU:
+		if event.pressed and MENU_PLAY_BUTTON.has_point(event.position):
+			_start_game()
+		elif event.pressed and MENU_CREDITS_BUTTON.has_point(event.position):
+			_show_credits()
+		return
+	if screen == AppScreen.CREDITS:
+		if event.pressed and CREDITS_BACK_BUTTON.has_point(event.position):
+			_show_main_menu()
+		return
 	if event.pressed:
-		if not rules.game_over and PAUSE_BUTTON.has_point(event.position):
+		if paused and PAUSE_RESUME_BUTTON.has_point(event.position):
+			_toggle_pause()
+			return
+		if paused and PAUSE_MENU_BUTTON.has_point(event.position):
+			_show_main_menu()
+			return
+		if not paused and not rules.game_over and PAUSE_BUTTON.has_point(event.position):
 			_toggle_pause()
 			return
 		if paused:
 			return
 		if rules.game_over:
-			rules.new_game(rules.seed)
-			paused = false
-			queue_redraw()
+			_start_game()
 			return
 		touch_active = true
 		touch_start = event.position
@@ -113,10 +151,31 @@ func _handle_screen_drag(event: InputEventScreenDrag) -> void:
 		queue_redraw()
 
 func _toggle_pause() -> void:
-	if rules.game_over:
+	if screen != AppScreen.GAME or rules.game_over:
 		return
 	paused = not paused
 	_cancel_touch_gesture()
+	queue_redraw()
+
+func _start_game() -> void:
+	rules.new_game(20260824)
+	gravity_elapsed = 0.0
+	paused = false
+	_cancel_touch_gesture()
+	screen = AppScreen.GAME
+	queue_redraw()
+
+func _show_main_menu() -> void:
+	paused = false
+	_cancel_touch_gesture()
+	rules = Rules.new()
+	gravity_elapsed = 0.0
+	screen = AppScreen.MAIN_MENU
+	queue_redraw()
+
+func _show_credits() -> void:
+	_cancel_touch_gesture()
+	screen = AppScreen.CREDITS
 	queue_redraw()
 
 func _cancel_touch_gesture() -> void:
@@ -127,6 +186,27 @@ func _cancel_touch_gesture() -> void:
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, Vector2(432, 768)), Color("07111f"))
+	if screen == AppScreen.MAIN_MENU:
+		_draw_main_menu()
+	elif screen == AppScreen.CREDITS:
+		_draw_credits()
+	else:
+		_draw_game()
+
+func _draw_main_menu() -> void:
+	draw_string(ThemeDB.fallback_font, Vector2(24, 188), "CLETRIS", HORIZONTAL_ALIGNMENT_CENTER, 384, 48, Color("e0f2fe"))
+	draw_string(ThemeDB.fallback_font, Vector2(24, 230), "PROCEDURAL FALLING-BLOCK PUZZLE", HORIZONTAL_ALIGNMENT_CENTER, 384, 13, Color("64748b"))
+	_draw_shell_button(MENU_PLAY_BUTTON, "PLAY", Color("0e7490"))
+	_draw_shell_button(MENU_CREDITS_BUTTON, "CREDITS", Color("172554"))
+
+func _draw_credits() -> void:
+	draw_string(ThemeDB.fallback_font, Vector2(24, 130), "CREDITS", HORIZONTAL_ALIGNMENT_CENTER, 384, 32, Color("e0f2fe"))
+	draw_string(ThemeDB.fallback_font, Vector2(48, 240), "CLETRIS", HORIZONTAL_ALIGNMENT_CENTER, 336, 24, Color("7dd3fc"))
+	draw_string(ThemeDB.fallback_font, Vector2(48, 282), "An original procedural puzzle game", HORIZONTAL_ALIGNMENT_CENTER, 336, 16, Color("cbd5e1"))
+	draw_string(ThemeDB.fallback_font, Vector2(48, 318), "Built with deterministic GDScript rules", HORIZONTAL_ALIGNMENT_CENTER, 336, 14, Color("94a3b8"))
+	_draw_shell_button(CREDITS_BACK_BUTTON, "BACK", Color("172554"))
+
+func _draw_game() -> void:
 	draw_string(ThemeDB.fallback_font, Vector2(24, 42), "CLETRIS", HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Color("e0f2fe"))
 	draw_string(ThemeDB.fallback_font, Vector2(196, 34), "SCORE %06d" % rules.score, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color("94a3b8"))
 	draw_string(ThemeDB.fallback_font, Vector2(196, 57), "LINES %03d" % rules.lines, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color("94a3b8"))
@@ -147,20 +227,22 @@ func _draw() -> void:
 		draw_string(ThemeDB.fallback_font, Vector2(72, 400), "Tap anywhere to restart", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("7dd3fc"))
 	elif paused:
 		_draw_pause_overlay()
-	if not rules.game_over:
+	if not rules.game_over and not paused:
 		_draw_pause_button()
 
 func _draw_pause_button() -> void:
-	var fill := Color("7c3aed") if paused else Color("172554")
-	var label := "RESUME" if paused else "PAUSE"
-	draw_rect(PAUSE_BUTTON, fill, true)
-	draw_rect(PAUSE_BUTTON, Color("a5b4fc"), false, 1.0)
-	draw_string(ThemeDB.fallback_font, PAUSE_BUTTON.position + Vector2(0, 23), label, HORIZONTAL_ALIGNMENT_CENTER, PAUSE_BUTTON.size.x, 11, Color("f8fafc"))
+	_draw_shell_button(PAUSE_BUTTON, "PAUSE", Color("172554"))
 
 func _draw_pause_overlay() -> void:
 	draw_rect(PAUSE_OVERLAY, Color(0.01, 0.03, 0.08, 0.82), true)
 	draw_string(ThemeDB.fallback_font, Vector2(0, 348), "PAUSED", HORIZONTAL_ALIGNMENT_CENTER, 432, 32, Color("f8fafc"))
-	draw_string(ThemeDB.fallback_font, Vector2(0, 378), "Tap RESUME to continue", HORIZONTAL_ALIGNMENT_CENTER, 432, 16, Color("c4b5fd"))
+	_draw_shell_button(PAUSE_RESUME_BUTTON, "RESUME", Color("7c3aed"))
+	_draw_shell_button(PAUSE_MENU_BUTTON, "MAIN MENU", Color("172554"))
+
+func _draw_shell_button(rect: Rect2, label: String, fill: Color) -> void:
+	draw_rect(rect, fill, true)
+	draw_rect(rect, Color("a5b4fc"), false, 1.0)
+	draw_string(ThemeDB.fallback_font, rect.position + Vector2(0, rect.size.y * 0.62), label, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, 15, Color("f8fafc"))
 
 func _draw_ghost_piece() -> void:
 	if rules.active.is_empty():

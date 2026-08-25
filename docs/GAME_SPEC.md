@@ -2,6 +2,8 @@
 
 Cletris is an original, portrait, touch-first falling-block puzzle game. It uses its own name and a procedural neon-grid presentation; it does not use Tetris branding, art, or copied presentation.
 
+The app opens on a main menu with only Play and Credits actions. Play starts a fresh seeded run. Credits has a Back action that returns to the main menu. While paused, Resume continues the run and Main Menu abandons it and returns to the app shell.
+
 The playfield is 10 columns by 20 rows. A seeded seven-piece bag supplies the seven standard four-cell geometric piece families. A player can move left or right, rotate in either direction when the rotated shape fits, soft-drop, or hard-drop. A piece locks when it can no longer descend. Completed rows clear together. A translucent ghost projects the active piece's current landing position, and the top-right HUD previews the next queued piece.
 
 Scoring is deterministic: one, two, three, and four cleared rows award 100, 300, 500, and 800 points respectively. The game ends if a newly spawned piece cannot fit. Restarting uses the original seed so a run is reproducible.
